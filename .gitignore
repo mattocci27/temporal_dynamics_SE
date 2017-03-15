@@ -1,0 +1,9 @@
+*.RData
+*.rda
+*.pdf
+*.tiff
+*.tif
+/data/*.txt
+/data/*.csv
+
+
