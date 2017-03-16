@@ -78,7 +78,11 @@ log(rate)
 R2_CV = -0.0377 [-0.165, 0.090]
 
 ## Binomial test: [com_binom.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_cjode/comm.)
-Binomial test (one-tail) for numbers of plots in which community mean values incresed (or decrease) twice in a row (1976 -> 1996 -> 2006).
+- Binomial test (one-tail) for numbers of plots in which community mean values incresed (or decrease) twice in a row (1976 -> 1996 -> 2006).
+- LA, LS and PCA1 were not tested because they deceased first then incrased from
+    1996 to 2006.
+- Since there are only 3 data points, I don't have any good ideas to test something
+    different for now.
 
 ### Results
 - HEIGHT and DENSITY seem to be increased and PCA2 seems to be decreased from 1976 to 2006.
