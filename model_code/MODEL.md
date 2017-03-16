@@ -8,6 +8,15 @@ Note:
 - Only best models were shown (based on AIC).
 - Ten-folds cross-validation was applied for each (best) model.
 - I added one to abudance to eleminate zero values.
+
+### Some Results
+- There are significant (p < 0.05) relationships between relative species
+    abudance changes and tratis, but these are due to overfitting. 
+- Cross-validated R2 values were negative for all the models, which suggets
+    there are no predicive linear relationships between abudance changs and
+    traits used in this analysis.
+
+
 #### model1:
 abundance_2006 ~ NB(mu, theta)  
 mu = exp(LA + LS + HEIGHT + DENSITY) * abudance_1976
@@ -70,6 +79,9 @@ R2_CV = -0.0377 [-0.165, 0.090]
 
 ## Binomial test: [com_binom.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_cjode/comm.)
 Binomial test (one-tail) for numbers of plots in which community mean values incresed (or decrease) twice in a row (1976 -> 1996 -> 2006).
+
+### Results
+- HEIGHT and DENSITY seem to be increased and PCA2 seems to be decreased from 1976 to 2006.
 
 |         | n_success | n_sample | p       | note     |
 |---------|-----------|----------|---------|----------|
