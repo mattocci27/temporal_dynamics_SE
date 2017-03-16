@@ -40,7 +40,7 @@ R2_CV = -2.14 [-5.82, 1.53]
 
 #### model3:
 log(rate)  
-= log(abudance_2006)/(abudance_1976)  
+= log(abudance_2006)/(abudance_1976))  
 = beta1 + beta2 * SEED + beta3 * LA * beta4 * HEIGHT + N(0, sigma)
 
 
@@ -55,7 +55,7 @@ R2_CV = -1.09 [-1.67, -0.52]
 
 #### model4:
 log(rate)  
-= log(abudance_2006)/(abudance_1976)  
+= log(abudance_2006)/(abudance_1976))  
 = beta1 + beta2 * PCA1 + beta3 * PCA2 * beta4 * PCA1 * PCA2 + N(0, sigma)
 
 | Variables     | Estimate | Std. Error | t value | P |
