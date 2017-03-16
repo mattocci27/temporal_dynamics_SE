@@ -57,6 +57,19 @@ temp <- data_frame(year_site, temp = 1)
 
 trait_com2 <- full_join(trait_com, temp, by = "year_site")
 
+## all
+sp_ab <- lapply(d, function(x)apply(x, 2, mean))
+
+#ab_lapply(sp_ab, trait, "SEED")
+res <- NULL
+for (i in 1:length(trait_var)){
+  res <- cbind(res, lapply(sp_ab, function(x)com.mean.ab(x %>% as.matrix %>% t, trait, trait_var[i])))
+}
+
+colnames(res) <- trait_var
+rownames(res) <- c(1976, 1996, 2006)
+com_t_mean <- res
+rm(res)
 
 ## sp-level
 #ab_dat <- as.data.frame(sapply(d,function(x)apply(x,2,sum)))
