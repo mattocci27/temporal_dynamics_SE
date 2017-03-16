@@ -1,17 +1,19 @@
-### Models: [sp_glm.R]()
-- model1 - GLM (all traits)
-- model2 - GLM (PCA)
-- model3 - LM (all traits)
-- model4 - LM (PCA)
+### Models: [sp_glm.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_code/sp_glm.R)
+- model1 - GLM (abundacne2006 ~ all traits)
+- model2 - GLM (abudance2006 ~ PCA)
+- model3 - LM (rate ~ all traits)
+- model4 - LM (rate ~ PCA)
 
 Note:
 - Only best models were shown (based on AIC).
 - Ten-folds cross-validatio was applied for each (best) model.
 - I added one to abudance to eleminate zero values.
 #### model1:
-abundance_2006 ~ NB(mu, theta)
-
+abundance_2006 ~ NB(mu, theta)  
 mu = exp(LA + LS + HEIGHT + DENSITY) * abudance_1976
+
+Note: abudance_1976 is offset term (baseline intercept)
+
 
 | Variables   | Estimate | Std. Error | z value | P |
 |-------------|----------|------------|---------|----------|
@@ -24,8 +26,7 @@ mu = exp(LA + LS + HEIGHT + DENSITY) * abudance_1976
 R2_CV = -0.98 [-2.37, 0.39]
 
 #### model2:
-abundance_2006 ~ NB(mu, theta)
-
+abundance_2006 ~ NB(mu, theta)  
 mu = exp(PCA1 + PCA2) * abudance_1976
 
 
@@ -38,8 +39,8 @@ mu = exp(PCA1 + PCA2) * abudance_1976
 R2_CV = -2.14 [-5.82, 1.53]
 
 #### model3:
-log(rate)
-= log(abudance_2006)/(abudance_1976)
+log(rate)  
+= log(abudance_2006)/(abudance_1976)  
 = beta1 + beta2 * SEED + beta3 * LA * beta4 * HEIGHT + N(0, sigma)
 
 
@@ -53,8 +54,8 @@ log(rate)
 R2_CV = -1.09 [-1.67, -0.52]
 
 #### model4:
-log(rate)
-= log(abudance_2006)/(abudance_1976)
+log(rate)  
+= log(abudance_2006)/(abudance_1976)  
 = beta1 + beta2 * PCA1 + beta3 * PCA2 * beta4 * PCA1 * PCA2 + N(0, sigma)
 
 | Variables     | Estimate | Std. Error | t value | P |
