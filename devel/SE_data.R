@@ -59,7 +59,8 @@ trait_com2 <- full_join(trait_com, temp, by = "year_site") %>%
   mutate(time = strsplit(year_site, "_") %>% sapply("[", 1) %>% as.numeric) %>%
   mutate(gx = strsplit(year_site, "_") %>% sapply("[", 2) %>% as.numeric) %>%
   mutate(gy = strsplit(year_site, "_") %>% sapply("[", 3) %>% as.numeric) %>%
-  mutate(site = paste(gx, gy, sep = "_"))
+  mutate(site = paste(gx, gy, sep = "_")) %>%
+  arrange(year_site)
 
 ## all
 sp_ab <- lapply(d, function(x)apply(x, 2, mean))

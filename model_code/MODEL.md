@@ -1,4 +1,4 @@
-### Models: [sp_glm.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_code/sp_glm.R)
+## Models: [sp_glm.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_code/sp_glm.R)
 - model1 - GLM (abundacne2006 ~ all traits)
 - model2 - GLM (abudance2006 ~ PCA)
 - model3 - LM (rate ~ all traits)
@@ -67,3 +67,14 @@ log(rate)
 
 
 R2_CV = -0.0377 [-0.165, 0.090]
+
+## Binomial test: [com_binom.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_cjode/comm.)
+Binomial test (one-tail) for numbers of plots in which community mean values incresed (or decrease) twice in a row (1976 -> 1996 -> 2006).
+
+|         | n_success | n_sample | p       | note     |
+|---------|-----------|----------|---------|----------|
+| SLA     | 109       | 381      | 0.060   | decrease |
+| HEIGHT  | 124       | 381      | < 0.001 | increase |
+| SEED    | 78        | 381      | 0.98    | increase |
+| DENSITY | 164       | 381      | < 0.001 | increase |
+| PCA2    | 148       | 381      | < 0.001 | decrease |
