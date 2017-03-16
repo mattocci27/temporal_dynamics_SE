@@ -35,10 +35,11 @@ cv_glm <- function(data, glmfit, K = 10){
 
     # predicted abudance for test data
     fitted <- predict(d_glm, test_dat, type = "response")
-    fitted2 <- fitted / test_dat$abund1976_1 # offset
+    fitted2 <- log(fitted / test_dat$abund1976_1) # offset
 
     # observed abudance for test data (offset)
-    yy <- test_dat$abund2006_1 / test_dat$abund1976_1
+    # no log-transformation yields similar results
+    yy <- log(test_dat$abund2006_1 / test_dat$abund1976_1)
 
     SS[i] <- (yy - mean(yy, na.rm = T))^2 %>% mean
     PREDS[i] <- (yy - fitted2)^2 %>% mean(na.rm = T)
@@ -75,7 +76,7 @@ cv_lm <- function(data, glmfit, K){
     fitted <- predict(d_glm, test_dat, type = "response")
 
     # observed abundance for test data
-    yy <- test_dat$rate
+    yy <- log(test_dat$rate)
 
     SS[i] <- (yy - mean(yy, na.rm = T))^2 %>% mean
     PREDS[i] <- (yy - fitted)^2 %>% mean(na.rm = T)
