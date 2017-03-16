@@ -68,7 +68,8 @@ for (i in 1:length(trait_var)){
 
 colnames(res) <- trait_var
 rownames(res) <- c(1976, 1996, 2006)
-com_t_mean <- res
+com_t_mean <- res %>%
+  apply(2, unlist) 
 rm(res)
 
 ## sp-level

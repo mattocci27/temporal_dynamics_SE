@@ -36,10 +36,14 @@ cont_dat <- cont_make(dat2, "LA") %>%
   cont_make("Comp.1") %>%
   cont_make("Comp.2")
 
-dat2 <- cont_dat %>%
-  # remove col ending with "ind_s" to make table
-  select(matches("[^ind_s$]"))
-names(dat2)
+#dat2 <- cont_dat %>%
+#  # remove col ending with "ind_s" to make table
+#  select(matches("[^ind_s$]")) # this does not work
+
+write.csv(cont_dat, 
+          "~/Dropbox/MS/nate_com/data/cont_index.csv",
+          row.names = FALSE)
+
 
 # select only scaled contribuion index
 fig_dat <- cont_dat %>%
@@ -49,6 +53,7 @@ fig_dat <- cont_dat %>%
   mutate(sig = ifelse(val < 0, "Negative", "Positive") %>% as.factor) %>%
   mutate(trait_sig = paste(trait, sig, sep = "_")) 
 
+# sum of scaled contriubtion index
 x_val <- fig_dat %>% 
   group_by(trait, sig) %>%
   summarise(mean = sum(val_abs, na.rm = T)) %>%
