@@ -55,7 +55,11 @@ year_site <- paste(rep(c(1976, 1996, 2006), each = length(trait_com$site %>% uni
 
 temp <- data_frame(year_site, temp = 1)
 
-trait_com2 <- full_join(trait_com, temp, by = "year_site")
+trait_com2 <- full_join(trait_com, temp, by = "year_site") %>%
+  mutate(time = strsplit(year_site, "_") %>% sapply("[", 1) %>% as.numeric) %>%
+  mutate(gx = strsplit(year_site, "_") %>% sapply("[", 2) %>% as.numeric) %>%
+  mutate(gy = strsplit(year_site, "_") %>% sapply("[", 3) %>% as.numeric) %>%
+  mutate(site = paste(gx, gy, sep = "_"))
 
 ## all
 sp_ab <- lapply(d, function(x)apply(x, 2, mean))
