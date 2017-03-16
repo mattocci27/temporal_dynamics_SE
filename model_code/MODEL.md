@@ -6,7 +6,7 @@
 
 Note:
 - Only best models were shown (based on AIC).
-- Ten-folds cross-validatio was applied for each (best) model.
+- Ten-folds cross-validation was applied for each (best) model.
 - I added one to abudance to eleminate zero values.
 #### model1:
 abundance_2006 ~ NB(mu, theta)  

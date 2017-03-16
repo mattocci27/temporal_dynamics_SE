@@ -1,5 +1,5 @@
 ###
-### contribution index 
+### contribution index
 ###
 
 load("~/Dropbox/MS/nate_com/data/SE_dat.rda")
@@ -40,7 +40,7 @@ cont_dat <- cont_make(dat2, "LA") %>%
 #  # remove col ending with "ind_s" to make table
 #  select(matches("[^ind_s$]")) # this does not work
 
-write.csv(cont_dat, 
+write.csv(cont_dat,
           "~/Dropbox/MS/nate_com/data/cont_index.csv",
           row.names = FALSE)
 
@@ -51,10 +51,10 @@ fig_dat <- cont_dat %>%
   tidyr::gather(trait, val, 2:9) %>%
   mutate(val_abs = abs(val)) %>%
   mutate(sig = ifelse(val < 0, "Negative", "Positive") %>% as.factor) %>%
-  mutate(trait_sig = paste(trait, sig, sep = "_")) 
+  mutate(trait_sig = paste(trait, sig, sep = "_"))
 
 # sum of scaled contriubtion index
-x_val <- fig_dat %>% 
+x_val <- fig_dat %>%
   group_by(trait, sig) %>%
   summarise(mean = sum(val_abs, na.rm = T)) %>%
   mutate(trait_sig = paste(trait, sig, sep = "_")) %>%
@@ -67,7 +67,7 @@ ggplot(fig_dat2) +
   # without x = mean/2, pie chart will have holes in the midle
   geom_bar(aes(y = val_abs, x = mean/2,
                fill = as.factor(name), width = mean),
-           position = "fill", stat = "identity") + 
+           position = "fill", stat = "identity") +
   facet_wrap(sig ~ trait) +
   coord_polar(theta="y") +
   #scale_fill_manual(values = c(cols_hex, "gray"),
@@ -82,4 +82,3 @@ ggplot(fig_dat2) +
   theme(legend.position = "bottom",
     legend.margin = unit(-0.2, "cm"),
     panel.grid = element_blank())
-
