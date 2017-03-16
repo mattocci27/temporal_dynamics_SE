@@ -8,7 +8,7 @@ dat <- ab_t_dat %>%
 # make sure that all communites have some values
   filter(is.na(abund1976) == FALSE)
 
-dat2 <- data %>%
+dat2 <- dat %>%
   mutate(ab_d = abund2006 / sum(abund2006) - abund1976 / sum(abund1976)) %>%
   mutate(ab_d_s = scale(ab_d) %>% as.numeric)
 
