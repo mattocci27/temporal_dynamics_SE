@@ -94,3 +94,17 @@ R2_CV = -0.0377 [-0.165, 0.090]
 | SEED    | 78        | 381      | 0.98    | increase |
 | DENSITY | 164       | 381      | < 0.001 | increase |
 | PCA2    | 148       | 381      | < 0.001 | decrease |
+
+## cont_index.R
+The follwoing species are largely responsible for the community
+mean trait shifts. For example, the contribution of "verti" to SEED is larger
+than the total community mean shift.
+
+"**SEED**"   "vertri"  
+"**LA**"     "capind" "cecpel" "tricun"  
+"**SLA**"    "capind" "manchi" "vertri"  
+"**LS**"     "astgra"  
+"**HEIGHT**" "manchi" "acacol" "exomex" "astgra" "procru" "cascor" "hemexc"  
+"**DENSITY**" "manchi"  "astgra"  "cocvit"  "cecpel"  "exomex"  "malarb" "capind"  "pismac"  "taboch"  "spopur"  "corall"  "calcan"  "swacub"  "ransub"  
+"**Comp.1**" "capind" "cecpel"  
+"**Comp.2**" "manchi" "hemexc" "acacol" "exomex" "cascor" "procru" "allocc" "vertri" "casarg" "cocvit" "pismac"

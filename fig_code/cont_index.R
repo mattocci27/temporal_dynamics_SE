@@ -44,6 +44,59 @@ write.csv(cont_dat,
           "~/Dropbox/MS/nate_com/data/cont_index.csv",
           row.names = FALSE)
 
+cont_dat %>%
+  select(-c(LA, SLA, LS, SEED, HEIGHT, DENSITY, Comp.1, Comp.2)) %>%
+  write.csv(
+          "~/Dropbox/MS/nate_com/data_pub/cont_index_small.csv",
+          row.names = FALSE)
+
+
+#moge <- sum(cont_dat$DENSITY_ind)
+#
+#cont_dat %>% 
+#  arrange(desc(DENSITY_ind))%>%
+#  select(name, DENSITY_ind) %>%
+#  mutate(cum = cumsum(DENSITY_ind)) %>%
+#  filter(DENSITY_ind > 0) %>%
+#  filter(cum < moge)
+
+
+## funtion to find species that contirubutes trait shifts
+cont_check <- function(cont_name) {
+  com_change <- sum(cont_dat[, cont_name])
+
+  if (com_change < 0) {
+    cont_dat[, cont_name] <- -cont_dat[, cont_name]
+    com_change2 <- -com_change
+  } else com_change2 <- com_change 
+
+  temp <- cont_dat[order(-cont_dat[, cont_name]), c("name", cont_name)] 
+  temp[, "cum"] <- cumsum(temp[, cont_name])
+  n_row <- temp %>% 
+    filter(cum < com_change2) %>%
+    nrow
+  
+  # to include one more species
+  temp2 <- temp[1:(n_row + 1), ]
+
+  if (com_change < 0) {
+    temp2[, cont_name] <- - temp2[, cont_name]
+    temp2[, "cum"] <- - temp2[, "cum"]
+  }
+  return(temp2)
+}
+
+# check how it works
+cont_check("SLA_ind")
+cont_check("DENSITY_ind")
+cont_check("LS_ind")
+
+
+cont_name <- paste(names(trait), "ind", sep = "_")
+for (i in 1:length(cont_name)) {
+  cont_check(cont_name[i]) %>% .$name %>% print
+} 
+
 
 # select only scaled contribuion index
 fig_dat <- cont_dat %>%
