@@ -1,4 +1,4 @@
-## Models: [sp_glm.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_code/sp_glm.R)
+## Liner models: [sp_glm.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/model_code/sp_glm.R)
 - model1 - GLM (abundacne2006 ~ all traits)
 - model2 - GLM (abudance2006 ~ PCA)
 - model3 - LM (rate ~ all traits)
@@ -95,7 +95,7 @@ R2_CV = -0.0377 [-0.165, 0.090]
 | DENSITY | 164       | 381      | < 0.001 | increase |
 | PCA2    | 148       | 381      | < 0.001 | decrease |
 
-## cont_index.R
+## Contributon index: [cont_index.R](https://github.com/mattocci27/temporal_dynamics_SE/blob/master/fig_code/cont_index.R)
 The follwoing species are largely responsible for the community
 mean trait shifts. For example, the contribution of "verti" to SEED is larger
 than the total community mean shift.
