@@ -1,0 +1,246 @@
+---
+title: SAR model
+author: Masatoshi Katabuchi
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+#rmdformats::material
+  html_document:
+    fig_caption: yes
+    theme: spacelab #readable #sandstone #spacelab #flatly
+    highlight: pygments #tango #kate
+    toc: TRUE
+    toc_depth: 2
+    number_sections: TRUE
+    toc_float:
+      collapsed: TRUE
+      smooth_scroll: TRUE
+      toc: true
+---
+
+
+```{r, echo = F}
+rm(list = ls())
+```
+
+- nested dataframe `n_d3` and dataframe `sar_dat` contain SAR corrected values (`transformed_metric`)
+
+
+# FRi, MPD, MNND (MNTD)
+
+- First, I calucated FD metrics.
+- We can change the distance matrix from `gower` to `euclidean`.
+- I didn't include Functinal Richnees for now.
+
+```{r, cache = TRUE}
+library(cluster)
+library(FD)
+
+load("./data/SE_dat.rda")
+
+site_name <- paste(rep(0:11, each = 32), rep(7:38, 12), sep = "_")
+site_dat <- tibble(site = site_name)
+samp_vec <- c("d1", "d2", "d3")
+
+list_fun <- function(metric = c("mpd", "mntd")){
+  year_tmp <- c(1976, 1996, 2006)
+  mpd_list <- list()
+  for (j in 1:3) {
+    mpd_mat <- NULL
+    mntd_mat <- NULL
+    samp <- get(samp_vec[j])
+    trait_edit <- trait[colnames(samp), ]
+    for (i in 1:8) {
+      t_dis <- daisy(trait_edit[, i] %>% 
+                     as.matrix,
+                   metric = "gower") %>% as.matrix
+      colnames(t_dis) <- rownames(t_dis) <- rownames(trait_edit)
+      if (metric == "mpd") {
+      tmp1 <- mpd(samp, t_dis, abundance.weighte = T)
+      } else if (metric == "mntd"){
+      tmp1 <- mntd(samp, t_dis, abundance.weighte = T)
+      }
+      mpd_mat <- cbind(mpd_mat, tmp1)
+    }
+    colnames(mpd_mat) <- colnames(trait_edit)
+    mpd_list[[j]] <- mpd_mat %>%
+      as_tibble %>%
+      mutate(site = rownames(samp)) %>%
+      full_join(., site_dat, by = "site") %>%
+      mutate(metric_name = metric) %>%
+      mutate(time = year_tmp[j])
+
+  }
+  mpd_list
+}
+
+
+mpd_list <- list_fun("mpd")
+mntd_list <- list_fun("mntd")
+
+fd_dat <- bind_rows(mpd_list[[1]], 
+          mpd_list[[2]],
+          mpd_list[[3]],
+          mntd_list[[1]],
+          mntd_list[[2]],
+          mntd_list[[3]]) %>%
+  mutate(gx = strsplit(site, "_") %>% sapply("[", 1) %>% as.numeric) %>%
+  mutate(gy = strsplit(site, "_") %>% sapply("[", 2) %>% as.numeric) %>%
+  mutate(year_site = paste(time, site, sep = "_"))
+
+```
+
+# Merge FD and CWM data
+
+- Three quadrats are missing
+
+```{r}
+d1 <- trait_com2 %>%
+  filter(time == 1976)
+
+ggplot(d1, aes(x = gx, y = gy, fill = temp)) +
+  geom_raster() +
+  coord_fixed()
+
+```
+
+- We need to add rows for those missing data
+
+```{r}
+
+trait_com3 <- trait_com2 %>%
+  mutate(metric_name = "CWM") %>%
+  dplyr::select(1:8,
+                site,
+                metric_name,
+                time,
+                gx,
+                gy,
+                year_site)
+
+gy_tmp <- c(31, 34, 37)
+year_tmp <- c(1976, 1996, 2006)
+na_dat <- NULL
+
+for (i in 1:3) {
+  for (j in 1:3) {
+    tmp <- trait_com3 %>%
+      slice(1)
+    tmp[1:8] <- NA
+    tmp[1:8] <- as.numeric(tmp[1:8])
+    tmp$gx <- 0
+    tmp$gy <- gy_tmp[i]
+    tmp$site <- paste(tmp$gx, tmp$gy, sep = "_")
+    tmp$time <- year_tmp[j]
+    tmp$year_site <- paste(tmp$time, tmp$site, sep = "_")
+    na_dat <- rbind(na_dat, tmp)
+  }
+}
+
+trait_com4 <- bind_rows(na_dat, trait_com3) %>%
+  bind_rows(., fd_dat) %>%
+  arrange(year_site) %>%
+  arrange(metric_name) %>%
+  mutate(temp2 = rep(1:(nrow(.)/9), 9) %>% as.character)
+
+n_d <- trait_com4 %>%
+  gather(trait_name, val, 1:8) %>%
+  group_by(trait_name, metric_name, time) %>%
+  nest()
+
+```
+
+# SAR model
+
+```{r}
+
+library(spdep)
+library(spatialreg)
+
+
+d_nb <- cell2nb(12, 32, type = "queen")
+d_W <- nb2listw(d_nb, zero.policy = T, style = "W")
+
+sar_fun <- function(data) {
+  metric <- data$val
+  res <- spautolm(metric ~ 1, listw = d_W, na.action = na.omit)
+  #res$fit$fitted.values
+  res2 <- res$fit$fitted.values
+  res_data <- tibble(temp2 = names(res2), transformed_metric = res2)
+  res_data
+}
+
+
+```
+
+We apply the function to the nested data.
+
+```{r, cache = TRUE}
+
+before <- proc.time()
+n_d2 <- n_d %>%
+  mutate(sar_val = map(data, sar_fun))
+after <- proc.time()
+after - before
+
+
+mer_fun <- function(data, sar_val){
+  full_join(data, sar_val, by = "temp2")
+}
+
+
+n_d3 <- n_d2 %>%
+  mutate(data2 = map2(data, sar_val, mer_fun)) %>%
+  dplyr::select(trait_name, metric_name, time, data2)
+
+```
+
+Now we have SAR transformed values for each trait, each trait metric and each census.
+
+```{r}
+
+sar_dat <- n_d3 %>%
+  unnest()
+
+n_d3
+
+```
+
+For example, `transfomred_metric` in the table below is SAR transformed CWM SEED.
+
+```{r}
+
+n_d3$data2[[1]] %>%
+  DT::datatable()
+
+```
+
+CWM SEED (without SAR)
+
+```{r}
+moge <- n_d3$data2[[1]]
+
+ggplot(moge, aes(x = gx, y = gy, fill = val)) +
+  geom_raster() +
+  coord_fixed()
+
+```
+
+CWM SEED (SAR corrected)
+
+```{r}
+
+ggplot(moge, aes(x = gx, y = gy, fill = transformed_metric)) +
+  geom_raster() +
+  coord_fixed()
+
+```
+
+```{r}
+save.image("./data/SAR_dat.rda")
+```
+
+# Computing Environment
+
+```{r}
+devtools::session_info()
+```

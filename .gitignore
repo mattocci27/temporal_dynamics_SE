@@ -1,8 +1,11 @@
 *.RData
 *.rda
+*.rdb
+*.rdx
 *.pdf
 *.tiff
 *.tif
+*cache
 /data/*.txt
 /data/*.csv
 /ms/*.doc
