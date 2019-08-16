@@ -5,11 +5,11 @@ source("https://raw.githubusercontent.com/mattocci27/TurnoverBCImain/master/sour
 
 library(picante)
 
-d1 <- readsample("~/Dropbox/MS/nate_com/data/samp76n.txt") %>% as.matrix
-d2 <- readsample("~/Dropbox/MS/nate_com/data/samp96n.txt") %>% as.matrix
-d3 <- readsample("~/Dropbox/MS/nate_com/data/samp06n.txt") %>% as.matrix
+d1 <- readsample("./data/samp76n.txt") %>% as.matrix
+d2 <- readsample("./data/samp96n.txt") %>% as.matrix
+d3 <- readsample("./data/samp06n.txt") %>% as.matrix
 
-trait_raw <- read.csv("~/Dropbox/MS/nate_com/data/SE_TRAITS.csv")
+trait_raw <- read.csv("./data/SE_TRAITS.csv")
 rownames(trait_raw) <- trait_raw$name
 trait <- trait_raw %>% select(-name)
 
@@ -98,4 +98,4 @@ ab_dat[is.na(ab_dat)] <- 0
 # merge with trait
 ab_t_dat <- full_join(ab_dat, trait_raw, by = "name")
 
-save.image("~/Dropbox/MS/nate_com/data/SE_dat.rda")
+save.image("./data/SE_dat.rda")
