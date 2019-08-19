@@ -22,74 +22,182 @@ output:
 rm(list = ls())
 ```
 
-- nested dataframe `n_d3` and dataframe `sar_dat` contain SAR corrected values (`transformed_metric`)
+- Nested dataframe `n_d3` and dataframe `sar_dat` contain SAR corrected values (`transformed_metric`) for single trait metrics (CWM, MPD, MNND, SES.MPD, SES.MNND and range)
+- Similalry, `fd_nd3` and `sar_dat_m` contain SAR corrected values for multivarate metrics (FR, MPD and MNND)
 
+# Data preparation
 
-# FRi, MPD, MNND (MNTD)
+## MPD,SES.MPD, MNND (MNTD), SES.MNND and Range for each trait
 
 - First, I calucated FD metrics.
 - We can change the distance matrix from `gower` to `euclidean`.
-- I didn't include Functinal Richnees for now.
 
-```{r, cache = TRUE}
+```{r, cache = TRUE, message = FALSE}
 library(cluster)
+library(picante)
 library(FD)
 
 load("./data/SE_dat.rda")
 
 site_name <- paste(rep(0:11, each = 32), rep(7:38, 12), sep = "_")
+trait_name <- colnames(trait)
 site_dat <- tibble(site = site_name)
 samp_vec <- c("d1", "d2", "d3")
 
-list_fun <- function(metric = c("mpd", "mntd")){
-  year_tmp <- c(1976, 1996, 2006)
-  mpd_list <- list()
-  for (j in 1:3) {
-    mpd_mat <- NULL
-    mntd_mat <- NULL
-    samp <- get(samp_vec[j])
-    trait_edit <- trait[colnames(samp), ]
-    for (i in 1:8) {
-      t_dis <- daisy(trait_edit[, i] %>% 
-                     as.matrix,
-                   metric = "gower") %>% as.matrix
-      colnames(t_dis) <- rownames(t_dis) <- rownames(trait_edit)
-      if (metric == "mpd") {
-      tmp1 <- mpd(samp, t_dis, abundance.weighte = T)
-      } else if (metric == "mntd"){
-      tmp1 <- mntd(samp, t_dis, abundance.weighte = T)
-      }
-      mpd_mat <- cbind(mpd_mat, tmp1)
-    }
-    colnames(mpd_mat) <- colnames(trait_edit)
-    mpd_list[[j]] <- mpd_mat %>%
-      as_tibble %>%
-      mutate(site = rownames(samp)) %>%
-      full_join(., site_dat, by = "site") %>%
-      mutate(metric_name = metric) %>%
-      mutate(time = year_tmp[j])
+#trait_raw <- trait
+#trait <- scale(trait_raw) %>% as.data.frame
 
+
+#range
+com_range <- function(samp, trait, traitname)
+{
+  N <- dim(samp)[1]
+  X <- paste(traitname)
+  comRange <- numeric(N)
+  max <- numeric(N)
+  min <- numeric(N)
+
+  for (i in 1:N){
+    sppInSample <- names(samp[i,samp[i,] > 0] )
+    if(length(sppInSample) > 1) {
+      sppInTrait <- trait[sppInSample, ]
+      max[i] <- max(sppInTrait[, X], na.rm = TRUE)
+      min[i] <- min(sppInTrait[, X], na.rm = TRUE)
+      comRange[i] <- max[i] - min[i]
+    }
+    else {
+      comRange[i] <- NA
+    }
   }
-  mpd_list
+  comRange
 }
 
 
-mpd_list <- list_fun("mpd")
-mntd_list <- list_fun("mntd")
 
-fd_dat <- bind_rows(mpd_list[[1]], 
-          mpd_list[[2]],
-          mpd_list[[3]],
-          mntd_list[[1]],
-          mntd_list[[2]],
-          mntd_list[[3]]) %>%
+library(snowfall)
+sfInit(parallel = T, cpu = parallel::detectCores())
+sfLibrary(cluster)
+sfLibrary(picante)
+
+par_func <- function(x, metric, samp, t_dis) {
+  if (metric == "mpd") {
+    tmp1 <- mpd(samp, t_dis, abundance.weighte = T)
+  } else if (metric == "mntd"){
+    tmp1 <- mntd(samp, t_dis, abundance.weighte = T)
+  } else if (metric == "range"){
+    tmp1 <- com_range(samp, trait, trait_name[i])
+  } else if (metric == "ses.mpd") {
+    tmp1 <- ses.mpd(samp,
+                    t_dis,
+                    null.model = "taxa.labels",
+                    abundance.weighted = T,
+                    runs = 999)$mpd.obs.z
+  } else if (metric == "ses.mntd"){
+    tmp1 <- ses.mntd(samp,
+                     t_dis,
+                     null.model = "taxa.labels",
+                     abundance.weighted = T,
+                     runs = 999)$mntd.obs.z
+  }
+  tmp1
+}
+
+fd_func <- function(x, metric){
+  year_tmp <- c(1976, 1996, 2006)
+  samp <- get(samp_vec[x])
+  trait_edit <- trait[colnames(samp), ]
+  t_dis <- daisy(trait_edit[, x] %>% 
+                 as.matrix,
+               metric = "gower") %>% as.matrix
+  colnames(t_dis) <- rownames(t_dis) <- rownames(trait_edit)
+  sfExport("t_dis", "metric", "samp")
+  #mpd_mat <- sapply(1:8, function(x)par_func(x, metric, samp, t_dis))
+  mpd_mat <- sfSapply(1:8, function(x)par_func(x, metric, samp, t_dis))
+  colnames(mpd_mat) <- colnames(trait_edit)
+  mpd_mat %>%
+    as_tibble %>%
+    mutate(site = rownames(samp)) %>%
+    full_join(., site_dat, by = "site") %>%
+    mutate(metric_name = metric) %>%
+    mutate(time = year_tmp[x])
+}
+
+metric_name <- c("mpd", "mntd", "range", "ses.mpd", "ses.mntd")
+
+sfExportAll()
+fd_list <- NULL
+before <- proc.time()
+for (i in 1:length(metric_name)) {
+  fd_list <- append(fd_list,
+                    lapply(1:3, function(x)fd_func(x, metric_name[i])))
+}
+after <- proc.time()
+after - before
+
+fd_dat0 <- NULL
+for (i in 1:length(fd_list)) fd_dat0 <- rbind(fd_dat0, fd_list[[i]])
+
+fd_dat <- fd_dat0 %>%
   mutate(gx = strsplit(site, "_") %>% sapply("[", 1) %>% as.numeric) %>%
   mutate(gy = strsplit(site, "_") %>% sapply("[", 2) %>% as.numeric) %>%
   mutate(year_site = paste(time, site, sep = "_"))
 
 ```
 
-# Merge FD and CWM data
+## FR, MPD and MNND (MNTD) for PC1 and PC2
+
+```{r, cache = TRUE, message = FALSE}
+
+list_fun2 <- function(){
+  year_tmp <- c(1976, 1996, 2006)
+  fd_list <- list()
+  for (j in 1:3) {
+    samp <- get(samp_vec[j])
+    trait_edit <- trait[colnames(samp), c("Comp.1", "Comp.2")]
+    t_dis <- daisy(trait_edit,
+                   metric = "gower") %>% as.matrix
+    colnames(t_dis) <- rownames(t_dis) <- rownames(trait_edit)
+    mpd_vec <- mpd(samp, t_dis, abundance.weighted = T)
+    mntd_vec <- mntd(samp, t_dis, abundance.weighted = T)
+    #tmp1 <- dbFD(t_dis, samp)
+    #w <- apply(samp, 2, sum)
+    tmp1 <- dbFD(trait_edit, samp, w.abun = T)
+    FR_vec <- tmp1$FRic
+    fd_list[[j]] <- tibble(mpd_PCA = mpd_vec,
+                           mntd_PCA = mntd_vec,
+                           FR_PCA = FR_vec,
+                           site = rownames(samp)) %>%
+      full_join(., site_dat, by = "site") %>%
+      mutate(time = year_tmp[j])
+  }
+  fd_list
+}
+
+fd_list <- list_fun2()
+
+fd_m_dat <- bind_rows(fd_list[[1]],
+                     fd_list[[2]],
+                     fd_list[[3]]) %>%
+  mutate(gx = strsplit(site, "_") %>% sapply("[", 1) %>% as.numeric) %>%
+  mutate(gy = strsplit(site, "_") %>% sapply("[", 2) %>% as.numeric) %>%
+  mutate(year_site = paste(time, site, sep = "_")) %>%
+  arrange(year_site) %>%
+  mutate(temp2 = rep(1:(nrow(.)/3), 3) %>% as.character)
+
+fd_m_dat %>%
+  gather(fd_name, val, 1:3) %>%
+  ggplot(., aes(x = as.character(time), y = val)) +
+  facet_wrap(~ fd_name, scale = "free") +
+  geom_boxplot()
+
+fd_nd <- fd_m_dat %>%
+  gather(fd_name, val, 1:3) %>%
+  group_by(fd_name, time) %>%
+  nest()
+
+```
+
+## Merge FD (single traits) and CWM data
 
 - Three quadrats are missing
 
@@ -140,7 +248,7 @@ trait_com4 <- bind_rows(na_dat, trait_com3) %>%
   bind_rows(., fd_dat) %>%
   arrange(year_site) %>%
   arrange(metric_name) %>%
-  mutate(temp2 = rep(1:(nrow(.)/9), 9) %>% as.character)
+  mutate(temp2 = rep(1:(nrow(.)/18), 18) %>% as.character)
 
 n_d <- trait_com4 %>%
   gather(trait_name, val, 1:8) %>%
@@ -149,7 +257,7 @@ n_d <- trait_com4 %>%
 
 ```
 
-# SAR model
+## SAR model
 
 ```{r}
 
@@ -176,8 +284,16 @@ We apply the function to the nested data.
 
 ```{r, cache = TRUE}
 
+# single trait FD
 before <- proc.time()
 n_d2 <- n_d %>%
+  mutate(sar_val = map(data, sar_fun))
+after <- proc.time()
+after - before
+
+# multivariate FD
+before <- proc.time()
+fd_nd2 <- fd_nd %>%
   mutate(sar_val = map(data, sar_fun))
 after <- proc.time()
 after - before
@@ -188,9 +304,15 @@ mer_fun <- function(data, sar_val){
 }
 
 
+# single trait FD
 n_d3 <- n_d2 %>%
   mutate(data2 = map2(data, sar_val, mer_fun)) %>%
   dplyr::select(trait_name, metric_name, time, data2)
+
+# multivariate FD
+fd_nd3 <- fd_nd2 %>%
+  mutate(data2 = map2(data, sar_val, mer_fun)) %>%
+  dplyr::select(fd_name, time, data2)
 
 ```
 
@@ -201,15 +323,31 @@ Now we have SAR transformed values for each trait, each trait metric and each ce
 sar_dat <- n_d3 %>%
   unnest()
 
+sar_dat_m <- fd_nd3 %>%
+  unnest()
+
 n_d3
 
 ```
+- `sar_dat`: dataframe for single trait metrics
+  - `trait_name`: Trait name
+  - `metric_name`: CWM, mpd, mntd, ses.mpd, ses.mntd and range
+  - `val`: Orignial values
+  - `transformed_metric`: SAR transformed values
 
-For example, `transfomred_metric` in the table below is SAR transformed CWM SEED.
+- `sar_dat_m`: dataframe for multivaraite trait metrics
+  - `trait_name`: Trait name
+  - `metric_name`: FR, mpd and mntd
+  - `val`: Orignial values
+  - `transformed_metric`: SAR transformed values
+
+Just showing the first 200 rows of `sar_dat`.
 
 ```{r}
-
-n_d3$data2[[1]] %>%
+sar_dat %>%
+  mutate(val = round(val, 3),
+        transformed_metric = round(transformed_metric, 3)) %>%
+  head(200) %>%
   DT::datatable()
 
 ```
@@ -237,6 +375,17 @@ ggplot(moge, aes(x = gx, y = gy, fill = transformed_metric)) +
 
 ```{r}
 save.image("./data/SAR_dat.rda")
+```
+
+# Analysis
+
+## Binomial test
+
+### CWM changes (Table 2)
+### FR, MPD and MNND changes (Table 3)
+### Range changes (Table 4)
+
+```{r, cache = TRUE}
 ```
 
 # Computing Environment

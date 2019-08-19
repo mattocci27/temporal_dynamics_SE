@@ -5,6 +5,7 @@
 *.pdf
 *.tiff
 *.tif
+*.html
 *cache
 /data/*.txt
 /data/*.csv
